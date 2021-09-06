@@ -5,10 +5,13 @@
 There are no warranties, express or implied, for this tool. This tool uses past market performance, which may have absolutely nothing to do with future performance. This tool is for educational and entertainment purposes only. Seek qualified investment professionals before you invest. Make sure you have learned everything you can from multiple perspectives before investing. Realize that any money you invest, you may lose all of it. Never trust some random guy on the internet to give you investing advice. Never trust "meme stonks" or the popular investment advice "out there." Any losses you incur are from your choices and not the use of this tool or following any ideas or theories from the author or on the internet. All investors are advised to conduct their own independent research into equities before making a purchase decision. In addition, investors are advised that past stock performance is no guarantee of future price appreciation. If you are still reading this paragraph, good on you, but seriously, seek competent advisors before investing.
 
 ## Summary
+
 > "What [Markowitz Portfolio Theory] says is that the volatility/risk of a portfolio may differ dramatically from the volatility/risk of the portfolio’s components. In other words, you can have two assets with both high standard deviations and high potential returns, but when combined they give you a portfolio with modest standard deviation but the same high potential return.” 
 > - Russell Wild
 
 This tool is intended to help find a portfolio of equities (I prefer Market Capitalization Weighted Index ETFs, but this should work for anything) that are not correlated in their movements. In other words, when one is up, the other is down. The idea being that if you dollar cost average (buying the same dollar amount every month) into this portfolio, you will always being going in heavier into the "down" equity (buying low), and when you rebalance (selling high and buying low) there will always be an equity that is high and another that is low.
+
+(If you are intrigued by this tool but most of the terms seem foreign to you, I am a financial coach and would be happy to discuss them. You can [book a free one-hour consultation](https://linktr.ee/resolvetoexcel).)
 
 ## Requirements
 
