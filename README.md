@@ -50,3 +50,7 @@ The *color* of the circle shows the relative *expense ratio*. Bright red (🔴) 
 The *distance* between circles represents how closely their movements correlate with eachother. The closer the circles are, the more closely their movements correlate with eachother.
 
 <img width="944" alt="Screen Shot 2021-09-06 at 2 55 58 PM" src="https://user-images.githubusercontent.com/695749/132262283-421e8568-1b61-47f1-800c-6693c81316a2.png">
+
+## How I use this tool
+
+I grab a bunch of Market Capitalization Weighted Index ETFs and pass them all on the command line. I then look for reasons to remove some (simplify my portfolio). If there is a grouping, I remove the redder (higher expense ratio), smaller (lower dividend) ones. It is not an exact science, just gut feel. I then run the tool again with the new list. I keep going until it gets hard to justify removing anymore.
