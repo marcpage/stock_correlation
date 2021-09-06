@@ -23,7 +23,7 @@ You will need to install *svgwrite* for this tool to work.
 
 > python3 stock_correlation.py VTI BND SCHD MGC
 
-This will generate three files in the current directory, *log.html*, *std_log.html*, and *plot.html*. The two *log.html* files show the progression. The *plot.html* file shows the final results.
+This will generate two files in the current directory, *log.html* and *plot.html*. The two *log.html* files show the progression. The *plot.html* file shows the final results.
 
 ## What it does
 
@@ -35,7 +35,7 @@ Once we have the swings normalized, we then determine the root-mean-square of th
 
 We then place each of the equities on the circumference of a circle, starting with the two most closely correlated equities and continue around the circle placing equities that are closest to the last placed equity. By the end we have a circle with closely related equities on the right and less closely related equities on the left.
 
-We then go through several iterations of slowly moving each equity towards a position that will have it closer to more correlated equities and further from less correlated equities. Once the movement settles, we then create *plot.html* to show the final position. (*std_log.html* shows each step in the process from circle to final location).
+We then go through several iterations of slowly moving each equity towards a position that will have it closer to more correlated equities and further from less correlated equities. Once the movement settles, we then create *plot.html* to show the final position. (*log.html* shows each step in the process from circle to final location).
 
 <img width="889" alt="Screen Shot 2021-09-06 at 5 45 59 PM" src="https://user-images.githubusercontent.com/695749/132264286-ce37fcd2-df0a-477e-b272-864c04765fbf.png">
 
