@@ -23,7 +23,7 @@ You will need to install *svgwrite* for this tool to work.
 
 > python3 stock_correlation.py VTI BND SCHD MGC
 
-This will generate two files in the current directory, *log.html* and *plot.html*. The two *log.html* files show the progression. The *plot.html* file shows the final results.
+This will generate two files in the current directory, *log.html* and *plot.html*. The *log.html* file shows the progression. The *plot.html* file shows the final results.
 
 ## What it does
 
