@@ -33,7 +33,7 @@ The script will go out and gather the full *history* for each ticker symbol pass
 
 Once we have the swings normalized, we then determine the root-mean-square of the differences (over the same days) between every pair of equities. This gives us a correlation number (the higher the number, the less correlated the movements of the equities are, the lower the number the more correlated).
 
-We then place each of the equities on the circumference of a circle, starting with the two most closely correlated equities and continue around the circle placing equities that are closest to the last placed equity. By the end we have a circle with closely related equities on the right and less closely related equities on the left.
+We then place each of the equities on the circumference of a circle, starting with the two most closely correlated equities and continue around the circle placing equities that are the most correlated in movement to the last placed equity. By the end we have a circle with closely related equities on the right and less closely related equities on the left.
 
 We then go through several iterations of slowly moving each equity towards a position that will have it closer to more correlated equities and further from less correlated equities. Once the movement settles, we then create *plot.html* to show the final position. (*log.html* shows each step in the process from circle to final location).
 
