@@ -169,7 +169,7 @@ class Point:
 
     def __sub__(self, point):
         """Find a vector between two points"""
-        return Vector(self.get_x() - point.get_y(), self.get_x() - point.get_y())
+        return Vector(self.get_x() - point.get_x(), self.get_y() - point.get_y())
 
     def __str__(self):
         """Display the point"""
@@ -243,11 +243,11 @@ def add_distances(histories):
         }
 
 
-def movement(symbol1, symbol2, points, histories, key_prefix):
+def movement(symbol1, symbol2, points, histories):
     """Move symbol1 towards the expected distance from symbol2"""
     distance = points[symbol2] - points[symbol1]
     distance_magnitude = distance.magnitude()
-    expected_distance = histories[symbol1][key_prefix + "distance"][symbol2]
+    expected_distance = histories[symbol1]["std_distance"][symbol2]
     return (
         distance.scaled((distance_magnitude - expected_distance) / distance_magnitude)
         if distance_magnitude > 0
@@ -255,16 +255,14 @@ def movement(symbol1, symbol2, points, histories, key_prefix):
     )
 
 
-def apply_gravity(points, histories, key_prefix, speed=0.10):
+def apply_gravity(points, histories, speed=0.10):
     """Move all points towards their expected distances from all other points"""
     velocities = {s: Vector(0, 0) for s in histories}
     largest_velocity = Vector(0, 0)
 
     for symbol1 in histories:
         for symbol2 in [s for s in histories if s != symbol1]:
-            distance_to_expected = movement(
-                symbol1, symbol2, points, histories, key_prefix
-            )
+            distance_to_expected = movement(symbol1, symbol2, points, histories)
             velocities[symbol1] += distance_to_expected.scaled(speed / 2.0)
 
     for symbol in points:
@@ -276,18 +274,18 @@ def apply_gravity(points, histories, key_prefix, speed=0.10):
     return largest_velocity.magnitude()
 
 
-def graph_points(histories, key_prefix, points=None, scale=1):
+def graph_points(histories, points=None, scale=1):
     """Graph all the equities"""
     # pylint: disable=too-many-locals
     if points is None:
-        points = {s: Point(*histories[s][key_prefix + "location"]) for s in histories}
+        points = {s: Point(*histories[s]["std_location"]) for s in histories}
 
     max_radius = min(
         [
             min(
                 [
-                    histories[s1][key_prefix + "distance"][s2]
-                    for s2 in histories[s1][key_prefix + "distance"]
+                    histories[s1]["std_distance"][s2]
+                    for s2 in histories[s1]["std_distance"]
                 ]
             )
             for s1 in histories
@@ -349,104 +347,97 @@ def graph_points(histories, key_prefix, points=None, scale=1):
     return main_drawing.tostring()
 
 
-def add_locations(histories, key_prefix=None):
+def add_locations(histories):
     """Place the equities in the edge of a circle, close to their nearest equity"""
     # pylint: disable=too-many-locals
-    if key_prefix is None:
-        add_locations(histories, "")
-        add_locations(histories, "std_")
-    else:
-        max_distance = max(
-            [
-                max(
-                    [
-                        histories[s1][key_prefix + "distance"][s2]
-                        for s2 in histories[s1][key_prefix + "distance"]
-                    ]
-                )
-                for s1 in histories
-            ]
-        )
-        min_distance = min(
-            [
-                min(
-                    [
-                        histories[s1][key_prefix + "distance"][s2]
-                        for s2 in histories[s1][key_prefix + "distance"]
-                    ]
-                )
-                for s1 in histories
-            ]
-        )
-        circle_radius = max_distance * (len(histories) - 1) / 2.0
-        radians_per_point = MAX_CIRCLE_RADIANS / len(histories)
-        symbols = list(histories)
-        negative = True
-        index = 0
-        start_symbol = [
-            s1
-            for s1 in histories
-            if min_distance
-            == min(
+    max_distance = max(
+        [
+            max(
                 [
-                    histories[s1][key_prefix + "distance"][s2]
-                    for s2 in histories[s1][key_prefix + "distance"]
+                    histories[s1]["std_distance"][s2]
+                    for s2 in histories[s1]["std_distance"]
                 ]
             )
-        ][0]
-        points = {
-            start_symbol: Point(
-                math.cos(index * radians_per_point) * circle_radius,
-                math.sin(index * radians_per_point) * circle_radius,
+            for s1 in histories
+        ]
+    )
+    min_distance = min(
+        [
+            min(
+                [
+                    histories[s1]["std_distance"][s2]
+                    for s2 in histories[s1]["std_distance"]
+                ]
             )
-        }
-        symbols.remove(start_symbol)
-        used_symbols = [start_symbol]
+            for s1 in histories
+        ]
+    )
+    circle_radius = max_distance * (len(histories) - 1) / 2.0
+    radians_per_point = MAX_CIRCLE_RADIANS / len(histories)
+    symbols = list(histories)
+    negative = True
+    index = 0
+    start_symbol = [
+        s1
+        for s1 in histories
+        if min_distance
+        == min(
+            [histories[s1]["std_distance"][s2] for s2 in histories[s1]["std_distance"]]
+        )
+    ][0]
+    points = {
+        start_symbol: Point(
+            math.cos(index * radians_per_point) * circle_radius,
+            math.sin(index * radians_per_point) * circle_radius,
+        )
+    }
+    symbols.remove(start_symbol)
+    used_symbols = [start_symbol]
 
-        while symbols:
-            sign = -1 if negative else 1
+    while symbols:
+        sign = -1 if negative else 1
 
-            if negative:
-                index += 1
-                near_symbol = used_symbols[0]
-                insert_location = 0
-            else:
-                near_symbol = used_symbols[-1]
-                insert_location = len(used_symbols)
+        if negative:
+            index += 1
+            near_symbol = used_symbols[0]
+            insert_location = 0
+        else:
+            near_symbol = used_symbols[-1]
+            insert_location = len(used_symbols)
 
-            next_symbol = sorted(
-                symbols,
-                key=lambda s: histories[near_symbol][key_prefix + "distance"][s],
-            )[0]
-            points[next_symbol] = Point(
-                math.cos(sign * index * radians_per_point) * circle_radius,
-                math.sin(sign * index * radians_per_point) * circle_radius,
-            )
+        next_symbol = sorted(
+            symbols,
+            key=lambda s: histories[near_symbol]["std_distance"][s],
+        )[0]
+        points[next_symbol] = Point(
+            math.cos(sign * index * radians_per_point) * circle_radius,
+            math.sin(sign * index * radians_per_point) * circle_radius,
+        )
 
-            negative = not negative
-            symbols.remove(next_symbol)
-            used_symbols.insert(insert_location, next_symbol)
+        negative = not negative
+        symbols.remove(next_symbol)
+        used_symbols.insert(insert_location, next_symbol)
 
-        change = 100
+    change = 100
 
-        with open(key_prefix + "log.html", "w") as log_file:
-            log_file.write("<html><body>\n")
+    with open("log.html", "w") as log_file:
+        log_file.write("<html><body>\n")
 
-            while change > 0.001:
-                change = apply_gravity(points, histories, key_prefix, speed=0.050)
-                log_file.write(graph_points(histories, key_prefix, points) + "\n")
-                log_file.flush()
+        while change > 0.001:
+            change = apply_gravity(points, histories, speed=0.050)
+            log_file.write(graph_points(histories, points) + "\n")
+            log_file.flush()
 
-            log_file.write("</body></html>\n")
+        log_file.write("</body></html>\n")
 
-        min_x = min([points[p].get_x() for p in points])
-        min_y = min([points[p].get_y() for p in points])
+    min_x = min([points[p].get_x() for p in points])
+    min_y = min([points[p].get_y() for p in points])
 
-        for symbol in points:
-            histories[symbol][key_prefix + "location"] = (
-                points[symbol].get_x() - min_x,
-                points[symbol].get_y() - min_y,
-            )
+    for symbol in points:
+        histories[symbol]["std_location"] = (
+            points[symbol].get_x() - min_x,
+            points[symbol].get_y() - min_y,
+        )
 
 
 def main():
@@ -464,7 +455,7 @@ def main():
 
     with open("plot.html", "w") as plot_file:
         plot_file.write("<html><body>\n")
-        plot_file.write(graph_points(histories, "std_", scale=20) + "\n")
+        plot_file.write(graph_points(histories, scale=20) + "\n")
         plot_file.write("</body></html>\n")
 
 
