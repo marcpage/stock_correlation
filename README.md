@@ -37,6 +37,8 @@ We then place each of the equities on the circumference of a circle, starting wi
 
 We then go through several iterations of slowly moving each equity towards a position that will have it closer to more correlated equities and further from less correlated equities. Once the movement settles, we then create *plot.html* to show the final position. (*std_log.html* shows each step in the process from circle to final location).
 
+<img width="889" alt="Screen Shot 2021-09-06 at 5 45 59 PM" src="https://user-images.githubusercontent.com/695749/132264286-ce37fcd2-df0a-477e-b272-864c04765fbf.png">
+
 ## How to read the chart
 
 An example chart is shown below. The *ticker symbol* is displayed (lower left of the text is at the center of the circle). 
