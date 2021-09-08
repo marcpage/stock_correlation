@@ -55,4 +55,4 @@ The *distance* between circles represents how closely their movements correlate 
 
 I grab a bunch of Market Capitalization Weighted Index ETFs and pass them all on the command line. I then look for reasons to remove some (simplify my portfolio). If there is a grouping, I remove the redder (higher expense ratio), smaller (lower dividend) ones. It is not an exact science, just gut feel. I then run the tool again with the new list. I keep going until it gets hard to justify removing anymore.
 
-In the chart above, it was a no-brainer to remove XLC and XLY (they are small, very red, and are pretty close to VOO and SCHF, respectively. XLU was a hard one to decide on as it has such a massive yield.
+In the chart above, it was a no-brainer to remove XLC and XLY (they are small, very red, and are pretty close to VOO and SCHF, respectively). XLU was a hard one to decide on as it has such a massive yield.
