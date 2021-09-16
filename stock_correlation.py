@@ -315,12 +315,12 @@ def graph_points(histories, points=None, scale=1):
                 255
                 * (expense_ratio - min_expense_ratio)
                 / (max_expense_ratio - min_expense_ratio)
-            ),
+            ) if max_expense_ratio > min_expense_ratio else 128,
             int(
                 255
                 * (max_expense_ratio - expense_ratio)
                 / (max_expense_ratio - min_expense_ratio)
-            ),
+            ) if max_expense_ratio > min_expense_ratio else 128,
         )
         dividend = math.sqrt(histories[symbol]["stats"]["yield"])
         radius = (max_radius - min_radius) * (dividend - min_yield) / (
