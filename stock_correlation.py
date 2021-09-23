@@ -27,8 +27,9 @@ USER_AGENT = (
     + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 )
 STATS_URL = "https://finance.yahoo.com/quote/%(symbol)s"
-YIELD_PATTERN = re.compile(r""""yield":{"raw":([0-9.]+),""")
+YIELD_PATTERN = re.compile(r""""(dividendYield|yield)":{"raw":([0-9.]+),""")
 EXPENSE_PATTERN = re.compile(r""""annualReportExpenseRatio":{"raw":([0-9.]+),""")
+NET_ASSETS = re.compile(r"""(totalAssets|marketCap)":{"raw":([0-9.]+),""")
 MAX_CIRCLE_RADIANS = 2.0 * 3.14159265
 
 
@@ -87,9 +88,11 @@ def get_symbol_stats(symbol):
     contents = get_url_contents(STATS_URL % {"symbol": symbol}, "stats", symbol).decode(
         "utf-8"
     )
+    has_expense_ratio = EXPENSE_PATTERN.search(contents)
     return {
-        "yield": float(YIELD_PATTERN.search(contents).group(1)),
-        "expense_ratio": float(EXPENSE_PATTERN.search(contents).group(1)),
+        "yield": float(YIELD_PATTERN.search(contents).group(2)),
+        "expense_ratio": float(has_expense_ratio.group(1) if has_expense_ratio else 0.0),
+        "total_value": float(NET_ASSETS.search(contents).group(2)),
     }
 
 
@@ -442,6 +445,12 @@ def add_locations(histories):
 
 def main():
     """Plot various equities"""
+
+    if len(sys.argv) <= 2:
+        print("Usage: \n%s %s [symbol1] [symbol2] ..."%(sys.executable, __file__))
+        print("You must specify at least two symbols")
+        sys.exit(1)
+
     histories = {
         x: {
             "history": calculate_variance(load_history(x)),
