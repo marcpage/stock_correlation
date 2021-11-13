@@ -41,11 +41,11 @@ We then go through several iterations of slowly moving each equity towards a pos
 
 ## How to read the chart
 
-An example chart is shown below. The *ticker symbol* is displayed (lower left of the text is at the center of the circle). 
+An example chart is shown below (Note: new image needed with saturation). The *ticker symbol* is displayed (lower left of the text is at the center of the circle). 
 
 The *area of each circle* is relative to its *yield* (the smaller the circle, the lower the yield). 
 
-The *color* of the circle shows the relative *expense ratio*. Bright red (🔴) is the highest expense ratio, bright green (🟢) is the lowest expense ratio. Darker colors are closer to being halfway between the highest and lowest.
+The *color* of the circle shows the relative *expense ratio*. Bright red (🔴) is the highest expense ratio, bright green (🟢) is the lowest expense ratio. Other colors are closer to being halfway between the highest and lowest. The more saturated (bolder) the color is, the higher the historic growth rate. The more washed out (muted, closer to white) the color is, the lower the historic growth rate.
 
 The *distance* between circles represents how closely their movements correlate with eachother. The closer the circles are, the more closely their movements correlate with eachother.
 
