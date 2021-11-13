@@ -142,7 +142,7 @@ def calculate_variance(history, stats):
             max_variance - min_variance
         )
 
-    result = {'history': history, 'slope': slope}
+    result = {'history': history, 'slope': slope * 60 * 60 * 24 * 365 / mean_adj_close}
     result.update({'stats': stats})
     return result
 
@@ -478,15 +478,16 @@ def main():
         plot_file.write("<body>\n")
         plot_file.write(graph_points(histories, scale=20) + "\n")
         plot_file.write("<table>\n")
-        plot_file.write("<tr><th>Symbol</th><th>Yield</th><th>Expense Ratio</th><th>Total Assets / Market Cap</th><th>Percent of total</th><tr>\n")
+        plot_file.write("<tr><th>Symbol</th><th>Yield</th><th>Expense Ratio</th><th>Total Assets / Market Cap</th><th>Percent of total</th><th>Growth Rate</th><tr>\n")
         market_sum = sum([histories[x]['stats']['total_value'] for x in histories])
         for symbol in sorted(histories, key=lambda x:histories[x]['stats']['total_value'], reverse=True):
-            plot_file.write("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(
+            plot_file.write("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(
                 symbol,
                 "%0.1f%%"%(100.0 * histories[symbol]['stats']['yield']),
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['expense_ratio']),
                 "%0.0f"%(histories[symbol]['stats']['total_value']),
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['total_value'] / market_sum),
+                "%0.2f%%"%(100.0 * histories[symbol]['slope']),
             ))
         plot_file.write("</table>\n")
         plot_file.write("</body></html>\n")
