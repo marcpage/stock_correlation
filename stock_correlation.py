@@ -110,7 +110,7 @@ def date_to_seconds(date_str):
     return time.mktime(time.strptime(date_str, "%Y-%m-%d"))
 
 
-def calculate_variance(history):
+def calculate_variance(history, stats):
     """Compare the histories of all symbols and get their variance from line fit"""
     mean_date = sum([date_to_seconds(d) for d in history]) / len(history)
     mean_adj_close = sum([float(history[d]["Adj Close"]) for d in history]) / len(
@@ -142,7 +142,9 @@ def calculate_variance(history):
             max_variance - min_variance
         )
 
-    return history
+    result = {'history': history, 'slope': slope}
+    result.update({'stats': stats})
+    return result
 
 
 def calculate_distance(history1, history2, key="variance"):
@@ -294,10 +296,13 @@ def graph_points(histories, points=None, scale=1):
             for s1 in histories
         ]
     )
+    # sqrt because yield is radius
     min_yield = math.sqrt(min([histories[s]["stats"]["yield"] for s in histories]))
     max_yield = math.sqrt(max([histories[s]["stats"]["yield"] for s in histories]))
     min_expense_ratio = min([histories[s]["stats"]["expense_ratio"] for s in histories])
     max_expense_ratio = max([histories[s]["stats"]["expense_ratio"] for s in histories])
+    min_slope = min([histories[s]["slope"] for s in histories])
+    max_slope = max([histories[s]["slope"] for s in histories])
     min_radius = 0.25 * max_radius
     min_x = min([points[p].get_x() for p in points]) - 2 * max_radius
     max_x = max([points[p].get_x() for p in points]) + 2 * max_radius
@@ -313,17 +318,25 @@ def graph_points(histories, points=None, scale=1):
 
     for symbol in points:
         expense_ratio = histories[symbol]["stats"]["expense_ratio"]
-        color = "#%02x%02x00" % (
-            int(
+        slope = histories[symbol]["slope"]
+        red = int(
                 255
                 * (expense_ratio - min_expense_ratio)
                 / (max_expense_ratio - min_expense_ratio)
-            ) if max_expense_ratio > min_expense_ratio else 128,
-            int(
+            ) if max_expense_ratio > min_expense_ratio else 128
+        green = int(
                 255
                 * (max_expense_ratio - expense_ratio)
                 / (max_expense_ratio - min_expense_ratio)
-            ) if max_expense_ratio > min_expense_ratio else 128,
+            ) if max_expense_ratio > min_expense_ratio else 128
+        blue = 0
+        saturation = (
+            (slope - min_slope)
+            / (max_slope - min_slope)) if max_slope > min_slope else 0.50
+        color = "#%02x%02x%02x" % (
+            red + int((255 - red) * (1.00 - saturation)),
+            green + int((255 - green) * (1.00 - saturation)),
+            blue + int((255 - blue) * (1.00 - saturation))
         )
         dividend = math.sqrt(histories[symbol]["stats"]["yield"])
         radius = (max_radius - min_radius) * (dividend - min_yield) / (
@@ -452,10 +465,7 @@ def main():
         sys.exit(1)
 
     histories = {
-        x: {
-            "history": calculate_variance(load_history(x)),
-            "stats": get_symbol_stats(x),
-        }
+        x: calculate_variance(load_history(x), get_symbol_stats(x))
         for x in sys.argv[1:]
     }
 
