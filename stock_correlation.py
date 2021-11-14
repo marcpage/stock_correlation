@@ -279,6 +279,133 @@ def apply_gravity(points, histories, speed=0.10):
     return largest_velocity.magnitude()
 
 
+def bubble_color(expense_ratio, min_expense_ratio, max_expense_ratio, slope, min_slope, max_slope):
+    min_saturation = 0.80
+    red = int(
+            255
+            * (expense_ratio - min_expense_ratio)
+            / (max_expense_ratio - min_expense_ratio)
+        ) if max_expense_ratio > min_expense_ratio else 128
+    green = int(
+            255
+            * (max_expense_ratio - expense_ratio)
+            / (max_expense_ratio - min_expense_ratio)
+        ) if max_expense_ratio > min_expense_ratio else 128
+    blue = 0
+    saturation = (
+        (slope - min_slope)
+        / (max_slope - min_slope)) if max_slope > min_slope else 0.50
+    return "#%02x%02x%02x" % (
+        red + int((255 - red) * min_saturation * (1.00 - saturation)),
+        green + int((255 - green) * min_saturation * (1.00 - saturation)),
+        blue + int((255 - blue) * min_saturation * (1.00 - saturation))
+    )
+
+
+def add_circle(drawing, main_drawing, location, radius, color):
+    drawing.add(
+        main_drawing.circle(
+            center=location,
+            r=radius,
+            fill=color,
+        )
+    )
+
+
+def add_label(drawing, main_drawing, location, text, rotate=0, size="1px"):
+    drawing.add(
+        main_drawing.text(
+            text,
+            insert=location,
+            font_size=size,
+            transform='rotate(%d,%s, %s)' % (rotate, location[0], location[1]),
+        )
+    )
+
+
+def add_rect(drawing, main_drawing, x, y, width, height, color):
+    drawing.add(
+        main_drawing.rect((x, y), (width, height), fill=color)
+    )
+
+
+def graph_key(drawing, main_drawing, width, height, radius_info, color_info, saturation_info):
+    max_radius = radius_info['max']
+    min_radius = radius_info['min']
+    mid_radius = (max_radius + min_radius) / 2
+    max_yield = 100.0 * radius_info['max_value']
+    min_yield = 100.0 * radius_info['min_value']
+    mid_yield = (max_yield + min_yield) / 2
+    max_expense_ratio = color_info['max_value']
+    min_expense_ratio = color_info['min_value']
+    mid_expense_ratio = (max_expense_ratio + min_expense_ratio) / 2
+    max_slope= saturation_info['max_value']
+    min_slope = saturation_info['min_value']
+    mid_slope = (max_slope + min_slope) / 2
+    border = 0.5
+    cell_size = 3.0
+    color_table = [
+        [
+            bubble_color(max_expense_ratio, min_expense_ratio, max_expense_ratio, min_slope, min_slope, max_slope),
+            bubble_color(mid_expense_ratio, min_expense_ratio, max_expense_ratio, min_slope, min_slope, max_slope),
+            bubble_color(min_expense_ratio, min_expense_ratio, max_expense_ratio, min_slope, min_slope, max_slope),
+        ],
+        [
+            bubble_color(max_expense_ratio, min_expense_ratio, max_expense_ratio, mid_slope, min_slope, max_slope),
+            bubble_color(mid_expense_ratio, min_expense_ratio, max_expense_ratio, mid_slope, min_slope, max_slope),
+            bubble_color(min_expense_ratio, min_expense_ratio, max_expense_ratio, mid_slope, min_slope, max_slope),
+        ],
+        [
+            bubble_color(max_expense_ratio, min_expense_ratio, max_expense_ratio, max_slope, min_slope, max_slope),
+            bubble_color(mid_expense_ratio, min_expense_ratio, max_expense_ratio, max_slope, min_slope, max_slope),
+            bubble_color(min_expense_ratio, min_expense_ratio, max_expense_ratio, max_slope, min_slope, max_slope),
+        ],
+    ]
+
+    circle_center = (width - max_radius - border, height - max_radius - border)
+    add_circle(drawing, main_drawing, circle_center, max_radius, "#88AAFF")
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(max_yield))
+
+    circle_center = (width - 2 * max_radius - mid_radius - border, height - mid_radius - border)
+    add_circle(drawing, main_drawing, circle_center, mid_radius, "#88AAFF")
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(mid_yield))
+
+    circle_center = (width - 2 * max_radius - 2 * mid_radius - min_radius - border, height - min_radius - border)
+    add_circle(drawing, main_drawing, circle_center, min_radius, "#88AAFF")
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(min_yield))
+
+    circle_center = (width - 2 * max_radius - border, height - border)
+    add_label(drawing, main_drawing, circle_center, "Yield")
+
+    for row in range(0, len(color_table)):
+        for column in range(0, len(color_table[row])):
+            add_rect(drawing, main_drawing, border + column * cell_size, height - border - (row + 1) * cell_size, cell_size, cell_size, color_table[row][column])
+
+    circle_center = (border + cell_size * 0 + border, height - border - cell_size * 3 - border)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * max_expense_ratio), rotate=-30)
+
+    circle_center = (border + cell_size * 1 + border, height - border - cell_size * 3 - border)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * mid_expense_ratio), rotate=-30)
+
+    circle_center = (border + cell_size * 2 + border, height - border - cell_size * 3 - border)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * min_expense_ratio), rotate=-30)
+
+    circle_center = (border + cell_size * 0, height - border - cell_size * 4 - border)
+    add_label(drawing, main_drawing, circle_center, "Expense Ratio")
+
+    circle_center = (border + cell_size * 3 + border, height - border - cell_size * 0 - cell_size / 2)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * min_slope))
+
+    circle_center = (border + cell_size * 3 + border, height - border - cell_size * 1 - cell_size / 2)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * mid_slope))
+
+    circle_center = (border + cell_size * 3 + border, height - border - cell_size * 2 - cell_size / 2)
+    add_label(drawing, main_drawing, circle_center, "%0.2f%%"%(100.0 * max_slope))
+
+    circle_center = (border + cell_size * 4 + 2 * border, height - border - cell_size * 2 - cell_size / 2)
+    add_label(drawing, main_drawing, circle_center, "Growth Rate", rotate=90)
+
+
 def graph_points(histories, points=None, scale=1):
     """Graph all the equities"""
     # pylint: disable=too-many-locals
@@ -312,52 +439,23 @@ def graph_points(histories, points=None, scale=1):
         size=(scale * (max_x - min_x), scale * (max_y - min_y))
     )
     drawing = main_drawing.g(transform="scale(%d)" % (scale))
-    drawing.add(
-        main_drawing.rect((0, 0), ((max_x - min_x), (max_y - min_y)), fill="lightgray")
-    )
-
+    add_rect(drawing, main_drawing, 0, 0, max_x - min_x, max_y - min_y, "lightgray")
+    graph_key(drawing, main_drawing, (max_x - min_x), (max_y - min_y),
+        {'min': min_radius, 'max': max_radius, 'min_value': min_yield**2, 'max_value': max_yield**2},
+        {'min_value': min_expense_ratio, 'max_value': max_expense_ratio},
+        {'min_value': min_slope, 'max_value': max_slope})
     for symbol in points:
         expense_ratio = histories[symbol]["stats"]["expense_ratio"]
         slope = histories[symbol]["slope"]
-        red = int(
-                255
-                * (expense_ratio - min_expense_ratio)
-                / (max_expense_ratio - min_expense_ratio)
-            ) if max_expense_ratio > min_expense_ratio else 128
-        green = int(
-                255
-                * (max_expense_ratio - expense_ratio)
-                / (max_expense_ratio - min_expense_ratio)
-            ) if max_expense_ratio > min_expense_ratio else 128
-        blue = 0
-        saturation = (
-            (slope - min_slope)
-            / (max_slope - min_slope)) if max_slope > min_slope else 0.50
-        color = "#%02x%02x%02x" % (
-            red + int((255 - red) * (1.00 - saturation)),
-            green + int((255 - green) * (1.00 - saturation)),
-            blue + int((255 - blue) * (1.00 - saturation))
-        )
+        color = bubble_color(expense_ratio, min_expense_ratio, max_expense_ratio, slope, min_slope, max_slope)
         dividend = math.sqrt(histories[symbol]["stats"]["yield"])
         radius = (max_radius - min_radius) * (dividend - min_yield) / (
             max_yield - min_yield
         ) + min_radius
-        drawing.add(
-            main_drawing.circle(
-                center=(points[symbol].get_x() - min_x, points[symbol].get_y() - min_y),
-                r=radius,
-                fill=color,
-            )
-        )
+        add_circle(drawing, main_drawing, (points[symbol].get_x() - min_x, points[symbol].get_y() - min_y), radius, color)
 
     for symbol in points:
-        drawing.add(
-            main_drawing.text(
-                symbol,
-                insert=(points[symbol].get_x() - min_x, points[symbol].get_y() - min_y),
-                font_size="1px",
-            )
-        )
+        add_label(drawing, main_drawing, (points[symbol].get_x() - min_x, points[symbol].get_y() - min_y), symbol)
 
     main_drawing.add(drawing)
     return main_drawing.tostring()
@@ -483,7 +581,7 @@ def main():
         for symbol in sorted(histories, key=lambda x:histories[x]['stats']['total_value'], reverse=True):
             plot_file.write("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n"%(
                 symbol,
-                "%0.1f%%"%(100.0 * histories[symbol]['stats']['yield']),
+                "%0.2f%%"%(100.0 * histories[symbol]['stats']['yield']),
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['expense_ratio']),
                 "%0.0f"%(histories[symbol]['stats']['total_value']),
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['total_value'] / market_sum),
