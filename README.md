@@ -49,7 +49,7 @@ The *color* of the circle shows the relative *expense ratio*. Bright red (🔴) 
 
 The *distance* between circles represents how closely their movements correlate with eachother. The closer the circles are, the more closely their movements correlate with eachother.
 
-<img width="944" alt="Screen Shot 2021-09-06 at 2 55 58 PM" src="https://user-images.githubusercontent.com/695749/132262283-421e8568-1b61-47f1-800c-6693c81316a2.png">
+<img width="976" alt="Screen Shot 2021-11-14 at 8 19 49 PM" src="https://user-images.githubusercontent.com/695749/141712364-e5822e0a-29c8-4ace-bd95-2eb6639178f3.png">
 
 ## How I use this tool
 
