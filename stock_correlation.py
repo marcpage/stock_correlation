@@ -4,6 +4,7 @@
     Takes ticker symbols as parameters
 """
 
+import argparse
 import os
 import sys
 import re
@@ -11,6 +12,8 @@ import time
 import math
 import urllib.request
 import platform
+import threading
+import queue
 
 import svgwrite  # pip install svgwrite
 
@@ -31,6 +34,13 @@ YIELD_PATTERN = re.compile(r""""(dividendYield|yield)":{"raw":([0-9.]+),""")
 EXPENSE_PATTERN = re.compile(r""""annualReportExpenseRatio":{"raw":([0-9.]+),""")
 NET_ASSETS = re.compile(r"""(totalAssets|marketCap)":{"raw":([0-9.]+),""")
 MAX_CIRCLE_RADIANS = 2.0 * 3.14159265
+
+
+def start_thread(target, *args):
+    t = threading.Thread(target=target, args=args)
+    t.setDaemon(True)
+    t.start()
+    return t
 
 
 def cache_file_path(*parts):
@@ -70,8 +80,12 @@ def get_url_contents(url, *name_parts):
         with urllib.request.urlopen(request) as connection:
             contents = connection.read()
 
-        with open(cache_path, "wb") as cache_file:
+        with open(cache_path + ".tmp", "wb") as cache_file:
             cache_file.write(contents)
+        try:
+            os.rename(cache_path + ".tmp", cache_path)
+        except:
+            pass
 
     return contents
 
@@ -435,12 +449,14 @@ def graph_points(histories, points=None, scale=1):
     max_x = max([points[p].get_x() for p in points]) + 2 * max_radius
     min_y = min([points[p].get_y() for p in points]) - 2 * max_radius
     max_y = max([points[p].get_y() for p in points]) + 2 * max_radius
+    footer = 15
+    right_margin = 5
     main_drawing = svgwrite.Drawing(
-        size=(scale * (max_x - min_x), scale * (max_y - min_y))
+        size=(scale * (max_x - min_x + right_margin), scale * (max_y - min_y + footer))
     )
     drawing = main_drawing.g(transform="scale(%d)" % (scale))
-    add_rect(drawing, main_drawing, 0, 0, max_x - min_x, max_y - min_y, "lightgray")
-    graph_key(drawing, main_drawing, (max_x - min_x), (max_y - min_y),
+    add_rect(drawing, main_drawing, 0, 0, max_x - min_x + right_margin, max_y - min_y + footer, "lightgray")
+    graph_key(drawing, main_drawing, (max_x - min_x + right_margin), (max_y - min_y + footer),
         {'min': min_radius, 'max': max_radius, 'min_value': min_yield**2, 'max_value': max_yield**2},
         {'min_value': min_expense_ratio, 'max_value': max_expense_ratio},
         {'min_value': min_slope, 'max_value': max_slope})
@@ -554,17 +570,30 @@ def add_locations(histories):
         )
 
 
-def main():
+def pre_fetch_symbols(symbol_queue):
+    while True:
+        symbol = symbol_queue.get()
+
+        if symbol is None:
+            symbol_queue.put(None)
+            break
+
+        try:
+            get_symbol_history(symbol)
+            get_symbol_stats(symbol)
+        except:
+            pass
+
+
+def main(args):
     """Plot various equities"""
 
-    if len(sys.argv) <= 2:
-        print("Usage: \n%s %s [symbol1] [symbol2] ..."%(sys.executable, __file__))
-        print("You must specify at least two symbols")
-        sys.exit(1)
+    expense_ratio_high_limit = args.max_expense_ratio
+    symbols = args.symbols
 
     histories = {
         x: calculate_variance(load_history(x), get_symbol_stats(x))
-        for x in sys.argv[1:]
+        for x in args.symbols
     }
 
     add_distances(histories)
@@ -591,5 +620,35 @@ def main():
         plot_file.write("</body></html>\n")
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description ='Determine correlation between stock movement')
+    parser.add_argument('-e', '--max-expense-ratio', dest = 'max_expense_ratio', type=float, default=1.0, help = "Maximum expense ratio to allow")
+    parser.add_argument('symbols', nargs='+', help='Equity symbols')
+    args = parser.parse_args()
+
+    if len(args.symbols) <= 2:
+        parser.print_help()
+        print("You must specify at least two symbols")
+        sys.exit(1)
+
+    symbol_queue = queue.Queue()
+    fetchers = [start_thread(pre_fetch_symbols, symbol_queue) for _ in range(0, 8)]
+
+    for symbol in (args.symbols):
+        symbol_queue.put(symbol)
+
+    symbol_queue.put(None)
+    [t.join() for t in fetchers]
+    args.symbols = [s for s in args.symbols if get_symbol_stats(s)['expense_ratio'] * 100.0 <= args.max_expense_ratio]
+
+    if len(args.symbols) <= 2:
+        parser.print_help()
+        print("You must specify at least two symbols that have an expense ratio less than %0.2f%%"%(args.max_expense_ratio))
+        sys.exit(1)
+
+    print("Symbols less then expense ratio of %0.2f%%: %s"%(args.max_expense_ratio, ", ".join(args.symbols)))
+    return args
+
+
 if __name__ == "__main__":
-    main()
+    main(parse_arguments())
