@@ -17,7 +17,7 @@ import queue
 
 import svgwrite  # pip install svgwrite
 
-
+STOCK_THREADS = 1  # 8
 QUOTE_API = "https://query1.finance.yahoo.com/v7/finance/download/"
 # 2000000000 means this will work until May, 17, 2033
 QUOTE_URL = (
@@ -30,9 +30,9 @@ USER_AGENT = (
     + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
 )
 STATS_URL = "https://finance.yahoo.com/quote/%(symbol)s"
-YIELD_PATTERN = re.compile(r""""(dividendYield|yield)":{"raw":([0-9.]+),""")
-EXPENSE_PATTERN = re.compile(r""""annualReportExpenseRatio":{"raw":([0-9.]+),""")
-NET_ASSETS = re.compile(r"""(totalAssets|marketCap)":{"raw":([0-9.]+),""")
+YIELD_PATTERN = re.compile(r""""(DIVIDEND_AND_YIELD-value|TD_YIELD-value)">([0-9.]+\s+\()?([0-9.]+)%""")
+EXPENSE_PATTERN = re.compile(r""""EXPENSE_RATIO-value">([0-9.]+)%""")
+NET_ASSETS = re.compile(r"""(NET_ASSETS|MARKET_CAP)-value">([0-9.]+[TBM])""")
 MAX_CIRCLE_RADIANS = 2.0 * 3.14159265
 
 
@@ -103,11 +103,43 @@ def get_symbol_stats(symbol):
         "utf-8"
     )
     has_expense_ratio = EXPENSE_PATTERN.search(contents)
-    return {
-        "yield": float(YIELD_PATTERN.search(contents).group(2)),
-        "expense_ratio": float(has_expense_ratio.group(1) if has_expense_ratio else 0.0),
-        "total_value": float(NET_ASSETS.search(contents).group(2)),
-    }
+    has_yield = YIELD_PATTERN.search(contents)
+    has_total_value = NET_ASSETS.search(contents)
+    
+    if has_total_value:
+        multiplier = has_total_value.group(2)[-1]
+        total_value = float(has_total_value.group(2)[:-1])
+
+        if multiplier == 'T':
+            total_value *= 1000000000000
+        elif multiplier == 'B':
+            total_value *= 1000000000
+        elif multiplier == 'M':
+            total_value *= 1000000
+        else:
+            raise SyntaxError(f"Unknown multiplier {multiplier} in {has_total_value.group(1)}")
+    else:
+        total_value = 0.0
+
+    try:
+        return {
+            "yield": float(has_yield.group(3)) / 100.0 if has_yield else 0.0,
+            "expense_ratio": float(has_expense_ratio.group(1)) / 100.0
+                                        if has_expense_ratio else 0.0,
+            "total_value": total_value,
+        }
+
+    except AttributeError:
+        print('='*80)
+        print("Unable to look up: " + symbol)
+        #print('-'*80)
+        #print(contents)
+        #print('-'*80)
+        #print(symbol)
+        print('='*100)
+        print(contents)
+        print('='*100)
+        raise
 
 
 def load_history(symbol):
@@ -465,9 +497,12 @@ def graph_points(histories, points=None, scale=1):
         slope = histories[symbol]["slope"]
         color = bubble_color(expense_ratio, min_expense_ratio, max_expense_ratio, slope, min_slope, max_slope)
         dividend = math.sqrt(histories[symbol]["stats"]["yield"])
-        radius = (max_radius - min_radius) * (dividend - min_yield) / (
-            max_yield - min_yield
-        ) + min_radius
+
+        if max_yield > min_yield:
+            radius = (max_radius - min_radius) * (dividend - min_yield) / (max_yield - min_yield) + min_radius
+        else:
+            radius = min_radius
+
         add_circle(drawing, main_drawing, (points[symbol].get_x() - min_x, points[symbol].get_y() - min_y), radius, color)
 
     for symbol in points:
@@ -613,7 +648,7 @@ def main(args):
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['yield']),
                 "%0.2f%%"%(100.0 * histories[symbol]['stats']['expense_ratio']),
                 "%0.0f"%(histories[symbol]['stats']['total_value']),
-                "%0.2f%%"%(100.0 * histories[symbol]['stats']['total_value'] / market_sum),
+                "%0.2f%%"%(100.0 * histories[symbol]['stats']['total_value'] / market_sum if market_sum > 0 else 0),
                 "%0.2f%%"%(100.0 * histories[symbol]['slope']),
             ))
         plot_file.write("</table>\n")
@@ -632,7 +667,7 @@ def parse_arguments():
         sys.exit(1)
 
     symbol_queue = queue.Queue()
-    fetchers = [start_thread(pre_fetch_symbols, symbol_queue) for _ in range(0, 8)]
+    fetchers = [start_thread(pre_fetch_symbols, symbol_queue) for _ in range(0, STOCK_THREADS)]
 
     for symbol in (args.symbols):
         symbol_queue.put(symbol)
