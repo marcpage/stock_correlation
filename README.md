@@ -41,7 +41,7 @@ We then go through several iterations of slowly moving each equity towards a pos
 
 ## How to read the chart
 
-An example chart is shown below (Note: new image needed with saturation). The *ticker symbol* is displayed (lower left of the text is at the center of the circle). 
+An example chart is shown below. The *ticker symbol* is displayed (lower left of the text is at the center of the circle). 
 
 The *area of each circle* is relative to its *yield* (the smaller the circle, the lower the yield). 
 
@@ -54,5 +54,3 @@ The *distance* between circles represents how closely their movements correlate 
 ## How I use this tool
 
 I grab a bunch of Market Capitalization Weighted Index ETFs and pass them all on the command line. I then look for reasons to remove some (simplify my portfolio). If there is a grouping, I remove the redder (higher expense ratio), smaller (lower dividend) ones. It is not an exact science, just gut feel. I then run the tool again with the new list. I keep going until it gets hard to justify removing anymore.
-
-In the chart above, it was a no-brainer to remove XLC and XLY (they are small, very red, and are pretty close to VOO and SCHF, respectively). XLU was a hard one to decide on as it has such a massive yield.
